@@ -1,18 +1,21 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { de } from 'date-fns/locale'
+
+const TZ = 'Europe/Berlin'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function formatDate(date: Date | string): string {
-  return format(new Date(date), 'dd.MM.yyyy', { locale: de })
+  return formatInTimeZone(new Date(date), TZ, 'dd.MM.yyyy', { locale: de })
 }
 
 export function formatDateTime(date: Date | string): string {
-  return format(new Date(date), 'dd.MM.yyyy HH:mm', { locale: de })
+  return formatInTimeZone(new Date(date), TZ, 'dd.MM.yyyy HH:mm', { locale: de })
 }
 
 export function formatDateTimeInput(date: Date | string): string {
