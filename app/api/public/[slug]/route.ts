@@ -9,6 +9,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
       where: { slug },
       include: {
         optionen: { orderBy: { order: 'asc' } },
+        anmeldungen: { select: { id: true } },
       },
     })
 

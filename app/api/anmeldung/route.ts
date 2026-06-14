@@ -19,7 +19,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name und Aktion sind Pflichtfelder' }, { status: 400 })
     }
 
-    const aktion = await prisma.aktion.findUnique({ where: { id: aktionId } })
+    const aktion = await prisma.aktion.findUnique({
+      where: { id: aktionId },
+      include: { _count: { select: { anmeldungen: true } } },
+    })
     if (!aktion) {
       return NextResponse.json({ error: 'Aktion nicht gefunden' }, { status: 404 })
     }
@@ -27,6 +30,13 @@ export async function POST(request: Request) {
     if (new Date() > new Date(aktion.anmeldeschluss)) {
       return NextResponse.json(
         { error: 'Der Anmeldeschluss ist bereits überschritten' },
+        { status: 400 }
+      )
+    }
+
+    if (aktion.maxTeilnehmer !== null && aktion._count.anmeldungen >= aktion.maxTeilnehmer) {
+      return NextResponse.json(
+        { error: 'Diese Aktion ist bereits ausgebucht' },
         { status: 400 }
       )
     }

@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import {
-  Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User,
+  Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User, Users,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -32,6 +32,10 @@ interface Aktion {
   endDate: string
   anmeldeschluss: string
   imageUrl: string | null
+  maxTeilnehmer: number | null
+  minAlter: number
+  maxAlter: number
+  anmeldungen: { id: string }[]
   optionen: Option[]
 }
 
@@ -173,6 +177,9 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   }
 
   const isOpen = isRegistrationOpen(aktion.anmeldeschluss)
+  const anmeldungenCount = aktion.anmeldungen.length
+  const isAusgebucht = aktion.maxTeilnehmer !== null && anmeldungenCount >= aktion.maxTeilnehmer
+  const freePlaetze = aktion.maxTeilnehmer !== null ? aktion.maxTeilnehmer - anmeldungenCount : null
   const checkboxOptionen = aktion.optionen.filter((o) => o.type === 'CHECKBOX')
   const textOptionen = aktion.optionen.filter((o) => o.type === 'TEXT')
 
@@ -249,6 +256,20 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
                   {formatDateTime(aktion.anmeldeschluss)}
                 </span>
               </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="h-4 w-4 shrink-0" />
+                <span>Alter: {aktion.minAlter}–{aktion.maxAlter} Jahre</span>
+              </div>
+              {aktion.maxTeilnehmer !== null && (
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className={isAusgebucht ? 'text-destructive font-medium' : freePlaetze !== null && freePlaetze <= 5 ? 'text-orange-600 font-medium' : 'text-muted-foreground'}>
+                    {isAusgebucht
+                      ? 'Ausgebucht'
+                      : `${freePlaetze} von ${aktion.maxTeilnehmer} Plätzen frei`}
+                  </span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -261,7 +282,17 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
           </Alert>
         )}
 
-        {isOpen && (
+        {isOpen && isAusgebucht && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Ausgebucht</AlertTitle>
+            <AlertDescription>
+              Alle Plätze für diese Aktion sind vergeben. Eine Anmeldung ist nicht mehr möglich.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isOpen && !isAusgebucht && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <Card>
               <CardHeader className="pb-2">

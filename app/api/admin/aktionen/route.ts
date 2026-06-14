@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, description, startDate, endDate, anmeldeschluss, imageUrl, optionen } = body
+    const { name, description, startDate, endDate, anmeldeschluss, imageUrl, maxTeilnehmer, minAlter, maxAlter, optionen } = body
 
     if (!name || !description || !startDate || !endDate || !anmeldeschluss) {
       return NextResponse.json({ error: 'Pflichtfelder fehlen' }, { status: 400 })
@@ -36,6 +36,9 @@ export async function POST(request: Request) {
         endDate: new Date(endDate),
         anmeldeschluss: new Date(anmeldeschluss),
         imageUrl: imageUrl || null,
+        maxTeilnehmer: maxTeilnehmer ? Number(maxTeilnehmer) : null,
+        minAlter: minAlter != null ? Number(minAlter) : 9,
+        maxAlter: maxAlter != null ? Number(maxAlter) : 16,
         slug,
         optionen: {
           create: (optionen || []).map(

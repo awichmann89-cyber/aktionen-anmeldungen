@@ -31,7 +31,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, description, startDate, endDate, anmeldeschluss, imageUrl, optionen } = body
+    const { name, description, startDate, endDate, anmeldeschluss, imageUrl, maxTeilnehmer, minAlter, maxAlter, optionen } = body
 
     await prisma.option.deleteMany({ where: { aktionId: id } })
 
@@ -44,6 +44,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         endDate: new Date(endDate),
         anmeldeschluss: new Date(anmeldeschluss),
         imageUrl: imageUrl ?? null,
+        maxTeilnehmer: maxTeilnehmer ? Number(maxTeilnehmer) : null,
+        minAlter: minAlter != null ? Number(minAlter) : 9,
+        maxAlter: maxAlter != null ? Number(maxAlter) : 16,
         optionen: {
           create: (optionen || []).map(
             (o: { label: string; type: string }, i: number) => ({

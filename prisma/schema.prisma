@@ -21,6 +21,9 @@ model Aktion {
   anmeldeschluss DateTime
   slug           String   @unique
   imageUrl       String?
+  maxTeilnehmer  Int?
+  minAlter       Int      @default(9)
+  maxAlter       Int      @default(16)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

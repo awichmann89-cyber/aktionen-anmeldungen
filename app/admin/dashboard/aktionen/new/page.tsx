@@ -35,6 +35,9 @@ export default function NewAktionPage() {
     startDate: '',
     endDate: '',
     anmeldeschluss: '',
+    maxTeilnehmer: '',
+    minAlter: '9',
+    maxAlter: '16',
   })
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [optionen, setOptionen] = useState<OptionEntry[]>([createOption()])
@@ -54,6 +57,9 @@ export default function NewAktionPage() {
         body: JSON.stringify({
           ...form,
           imageUrl,
+          maxTeilnehmer: form.maxTeilnehmer ? Number(form.maxTeilnehmer) : null,
+          minAlter: Number(form.minAlter),
+          maxAlter: Number(form.maxAlter),
           optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
         }),
       })
@@ -108,6 +114,41 @@ export default function NewAktionPage() {
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 required
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="maxTeilnehmer">Max. Teilnehmer</Label>
+                <Input
+                  id="maxTeilnehmer"
+                  type="number"
+                  min="1"
+                  placeholder="Unbegrenzt"
+                  value={form.maxTeilnehmer}
+                  onChange={(e) => setForm((f) => ({ ...f, maxTeilnehmer: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minAlter">Mindestalter</Label>
+                <Input
+                  id="minAlter"
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={form.minAlter}
+                  onChange={(e) => setForm((f) => ({ ...f, minAlter: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxAlter">Höchstalter</Label>
+                <Input
+                  id="maxAlter"
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={form.maxAlter}
+                  onChange={(e) => setForm((f) => ({ ...f, maxAlter: e.target.value }))}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -61,6 +61,9 @@ interface Aktion {
   anmeldeschluss: string
   slug: string
   imageUrl: string | null
+  maxTeilnehmer: number | null
+  minAlter: number
+  maxAlter: number
   optionen: Option[]
   anmeldungen: Anmeldung[]
 }
@@ -79,6 +82,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
 
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '', anmeldeschluss: '',
+    maxTeilnehmer: '', minAlter: '9', maxAlter: '16',
   })
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [optionen, setOptionen] = useState<OptionEntry[]>([])
@@ -97,6 +101,12 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         anmeldeschluss: formatDateTimeInput(data.anmeldeschluss),
       })
       setImageUrl(data.imageUrl ?? null)
+      setForm((f) => ({
+        ...f,
+        maxTeilnehmer: data.maxTeilnehmer != null ? String(data.maxTeilnehmer) : '',
+        minAlter: String(data.minAlter ?? 9),
+        maxAlter: String(data.maxAlter ?? 16),
+      }))
       setOptionen(
         data.optionen.map((o) => ({ id: o.id, label: o.label, type: o.type }))
       )
@@ -124,6 +134,9 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         body: JSON.stringify({
           ...form,
           imageUrl,
+          maxTeilnehmer: form.maxTeilnehmer ? Number(form.maxTeilnehmer) : null,
+          minAlter: Number(form.minAlter),
+          maxAlter: Number(form.maxAlter),
           optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
         }),
       })
@@ -233,6 +246,38 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
               <div className="space-y-2">
                 <Label>Beschreibung *</Label>
                 <Textarea className="min-h-[100px]" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Max. Teilnehmer</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Unbegrenzt"
+                    value={form.maxTeilnehmer}
+                    onChange={(e) => setForm((f) => ({ ...f, maxTeilnehmer: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mindestalter</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={form.minAlter}
+                    onChange={(e) => setForm((f) => ({ ...f, minAlter: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Höchstalter</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={form.maxAlter}
+                    onChange={(e) => setForm((f) => ({ ...f, maxAlter: e.target.value }))}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
