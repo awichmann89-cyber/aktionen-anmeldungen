@@ -22,6 +22,7 @@ import {
   Users, ExternalLink, CheckSquare, Type,
 } from 'lucide-react'
 import { ImageUpload } from '@/components/image-upload'
+import { DateTimeInput } from '@/components/datetime-input'
 import Image from 'next/image'
 
 type OptionType = 'CHECKBOX' | 'TEXT'
@@ -289,19 +290,17 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
           <Card>
             <CardHeader><CardTitle className="text-base">Zeiträume</CardTitle></CardHeader>
             <CardContent className="space-y-4 overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2 min-w-0">
-                  <Label>Startdatum & -zeit *</Label>
-                  <Input type="datetime-local" className="w-full min-w-0" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} required />
-                </div>
-                <div className="space-y-2 min-w-0">
-                  <Label>Enddatum & -zeit *</Label>
-                  <Input type="datetime-local" className="w-full min-w-0" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} required />
-                </div>
+              <div className="space-y-2">
+                <Label>Startdatum & -zeit *</Label>
+                <DateTimeInput value={form.startDate} onChange={(v) => setForm((f) => ({ ...f, startDate: v }))} required />
               </div>
-              <div className="space-y-2 min-w-0">
+              <div className="space-y-2">
+                <Label>Enddatum & -zeit *</Label>
+                <DateTimeInput value={form.endDate} onChange={(v) => setForm((f) => ({ ...f, endDate: v }))} required />
+              </div>
+              <div className="space-y-2">
                 <Label>Anmeldeschluss *</Label>
-                <Input type="datetime-local" className="w-full min-w-0" value={form.anmeldeschluss} onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))} required />
+                <DateTimeInput value={form.anmeldeschluss} onChange={(v) => setForm((f) => ({ ...f, anmeldeschluss: v }))} required />
               </div>
             </CardContent>
           </Card>
