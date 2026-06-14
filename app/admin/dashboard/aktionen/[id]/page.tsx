@@ -99,14 +99,11 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         startDate: formatDateTimeInput(data.startDate),
         endDate: formatDateTimeInput(data.endDate),
         anmeldeschluss: formatDateTimeInput(data.anmeldeschluss),
-      })
-      setImageUrl(data.imageUrl ?? null)
-      setForm((f) => ({
-        ...f,
         maxTeilnehmer: data.maxTeilnehmer != null ? String(data.maxTeilnehmer) : '',
         minAlter: String(data.minAlter ?? 9),
         maxAlter: String(data.maxAlter ?? 16),
-      }))
+      })
+      setImageUrl(data.imageUrl ?? null)
       setOptionen(
         data.optionen.map((o) => ({ id: o.id, label: o.label, type: o.type }))
       )
