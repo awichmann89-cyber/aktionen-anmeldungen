@@ -238,6 +238,13 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
           </Card>
 
           <Card>
+            <CardHeader><CardTitle className="text-base">Titelbild</CardTitle></CardHeader>
+            <CardContent>
+              <ImageUpload value={imageUrl} onChange={setImageUrl} />
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader><CardTitle className="text-base">Zeiträume</CardTitle></CardHeader>
             <CardContent className="space-y-4 overflow-hidden">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -254,13 +261,6 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
                 <Label>Anmeldeschluss *</Label>
                 <Input type="datetime-local" className="w-full min-w-0" value={form.anmeldeschluss} onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))} required />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle className="text-base">Titelbild</CardTitle></CardHeader>
-            <CardContent>
-              <ImageUpload value={imageUrl} onChange={setImageUrl} />
             </CardContent>
           </Card>
 
