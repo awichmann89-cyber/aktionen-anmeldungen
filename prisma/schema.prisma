@@ -42,6 +42,12 @@ model Option {
   anmeldungOptionen AnmeldungOption[]
 }
 
+// Globale App-Einstellungen (key-value)
+model Setting {
+  key   String @id
+  value String
+}
+
 model Anmeldung {
   id        String   @id @default(cuid())
   aktionId  String

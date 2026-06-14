@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import {
-  Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User, Users,
+  Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User, Users, Mail,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -60,6 +60,7 @@ function createKind(): KindEntry {
 export default function AnmeldungPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const [aktion, setAktion] = useState<Aktion | null>(null)
+  const [kontaktEmail, setKontaktEmail] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -68,9 +69,14 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   const [kinder, setKinder] = useState<KindEntry[]>([createKind()])
 
   useEffect(() => {
-    fetch(`/api/public/${slug}`)
-      .then((res) => { if (res.status === 404) { setNotFound(true); return null } return res.json() })
-      .then((data) => { if (data) setAktion(data) })
+    Promise.all([
+      fetch(`/api/public/${slug}`)
+        .then((res) => { if (res.status === 404) { setNotFound(true); return null } return res.json() })
+        .then((data) => { if (data) setAktion(data) }),
+      fetch('/api/public/einstellungen')
+        .then((r) => r.json())
+        .then((data) => setKontaktEmail(data.kontaktEmail || '')),
+    ])
       .catch(() => toast.error('Fehler beim Laden'))
       .finally(() => setLoading(false))
   }, [slug])
@@ -206,9 +212,19 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
                 </ul>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Bei Fragen wende dich bitte direkt an die Organisatoren.
-            </p>
+            {kontaktEmail ? (
+              <p className="text-sm text-muted-foreground">
+                Bei Fragen wende dich an{' '}
+                <a href={`mailto:${kontaktEmail}`} className="text-primary underline underline-offset-4">
+                  {kontaktEmail}
+                </a>
+                .
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Bei Fragen wende dich bitte direkt an die Organisatoren.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -391,6 +407,20 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
               )}
             </Button>
           </form>
+        )}
+
+        {kontaktEmail && (
+          <Card>
+            <CardContent className="py-4 flex items-center gap-3 text-sm text-muted-foreground">
+              <Mail className="h-4 w-4 shrink-0" />
+              <span>
+                Fragen?{' '}
+                <a href={`mailto:${kontaktEmail}`} className="text-primary underline underline-offset-4 font-medium">
+                  {kontaktEmail}
+                </a>
+              </span>
+            </CardContent>
+          </Card>
         )}
 
         <p className="text-center text-xs text-muted-foreground">
