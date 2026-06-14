@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User,
 } from 'lucide-react'
+import Image from 'next/image'
 
 type OptionType = 'CHECKBOX' | 'TEXT'
 
@@ -30,6 +31,7 @@ interface Aktion {
   startDate: string
   endDate: string
   anmeldeschluss: string
+  imageUrl: string | null
   optionen: Option[]
 }
 
@@ -209,6 +211,23 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   return (
     <div className="min-h-screen bg-muted/20 py-8 px-4">
       <div className="max-w-lg mx-auto space-y-6">
+        {/* Titelbild (DIN A4) */}
+        {aktion.imageUrl && (
+          <div
+            className="relative w-full overflow-hidden rounded-xl shadow-lg"
+            style={{ paddingBottom: `${(1 / (1 / 1.414)) * 100}%` }}
+          >
+            <Image
+              src={aktion.imageUrl}
+              alt={`Plakat: ${aktion.name}`}
+              fill
+              className="object-contain"
+              sizes="(max-width: 640px) 100vw, 512px"
+              priority
+            />
+          </div>
+        )}
+
         <div className="text-center space-y-1">
           <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Online-Anmeldung</p>
           <h1 className="text-3xl font-bold tracking-tight">{aktion.name}</h1>

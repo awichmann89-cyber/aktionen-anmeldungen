@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, description, startDate, endDate, anmeldeschluss, optionen } = body
+    const { name, description, startDate, endDate, anmeldeschluss, imageUrl, optionen } = body
 
     if (!name || !description || !startDate || !endDate || !anmeldeschluss) {
       return NextResponse.json({ error: 'Pflichtfelder fehlen' }, { status: 400 })
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         anmeldeschluss: new Date(anmeldeschluss),
+        imageUrl: imageUrl || null,
         slug,
         optionen: {
           create: (optionen || []).map(

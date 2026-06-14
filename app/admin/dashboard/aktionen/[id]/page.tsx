@@ -21,6 +21,8 @@ import {
   ArrowLeft, Plus, Trash2, Download, Copy, Check,
   Users, ExternalLink, CheckSquare, Type,
 } from 'lucide-react'
+import { ImageUpload } from '@/components/image-upload'
+import Image from 'next/image'
 
 type OptionType = 'CHECKBOX' | 'TEXT'
 
@@ -58,6 +60,7 @@ interface Aktion {
   endDate: string
   anmeldeschluss: string
   slug: string
+  imageUrl: string | null
   optionen: Option[]
   anmeldungen: Anmeldung[]
 }
@@ -77,6 +80,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '', anmeldeschluss: '',
   })
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [optionen, setOptionen] = useState<OptionEntry[]>([])
 
   async function loadAktion() {
@@ -92,6 +96,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         endDate: formatDateTimeInput(data.endDate),
         anmeldeschluss: formatDateTimeInput(data.anmeldeschluss),
       })
+      setImageUrl(data.imageUrl ?? null)
       setOptionen(
         data.optionen.map((o) => ({ id: o.id, label: o.label, type: o.type }))
       )
@@ -118,6 +123,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          imageUrl,
           optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
         }),
       })
@@ -234,7 +240,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
           <Card>
             <CardHeader><CardTitle className="text-base">Termine</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Startdatum & -zeit *</Label>
                   <Input type="datetime-local" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} required />
@@ -248,6 +254,13 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
                 <Label>Anmeldeschluss *</Label>
                 <Input type="datetime-local" value={form.anmeldeschluss} onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))} required />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Titelbild</CardTitle></CardHeader>
+            <CardContent>
+              <ImageUpload value={imageUrl} onChange={setImageUrl} />
             </CardContent>
           </Card>
 

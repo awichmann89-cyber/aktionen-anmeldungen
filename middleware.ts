@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/dashboard/:path*',
-    '/api/admin/aktionen/:path*',
-    '/api/admin/logout',
+    // Alle /api/admin/* Routen außer /login
+    '/api/admin/((?!login).*)',
   ],
 }

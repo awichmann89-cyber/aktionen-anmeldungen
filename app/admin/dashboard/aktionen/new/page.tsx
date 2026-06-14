@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Plus, Trash2, CheckSquare, Type } from 'lucide-react'
+import { ImageUpload } from '@/components/image-upload'
 
 type OptionType = 'CHECKBOX' | 'TEXT'
 
@@ -35,6 +36,7 @@ export default function NewAktionPage() {
     endDate: '',
     anmeldeschluss: '',
   })
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [optionen, setOptionen] = useState<OptionEntry[]>([createOption()])
 
   function updateOption(id: string, changes: Partial<OptionEntry>) {
@@ -51,6 +53,7 @@ export default function NewAktionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          imageUrl,
           optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
         }),
       })
@@ -112,7 +115,7 @@ export default function NewAktionPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Termine</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Startdatum & -zeit *</Label>
                 <Input
@@ -144,6 +147,15 @@ export default function NewAktionPage() {
                 Nach diesem Datum sind keine Anmeldungen mehr möglich.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Titelbild</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload value={imageUrl} onChange={setImageUrl} />
           </CardContent>
         </Card>
 

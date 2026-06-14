@@ -20,6 +20,7 @@ model Aktion {
   endDate        DateTime
   anmeldeschluss DateTime
   slug           String   @unique
+  imageUrl       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
