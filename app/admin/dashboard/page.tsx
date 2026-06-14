@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -57,7 +59,9 @@ export default function DashboardPage() {
     loadAktionen()
   }, [])
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : '')
 
   return (
     <div className="space-y-6">
