@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Aktion {
+  id             String   @id @default(cuid())
+  name           String
+  description    String   @db.Text
+  startDate      DateTime
+  endDate        DateTime
+  anmeldeschluss DateTime
+  slug           String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  optionen    Option[]
+  anmeldungen Anmeldung[]
+}
+
+model Option {
+  id       String @id @default(cuid())
+  aktionId String
+  label    String
+  order    Int    @default(0)
+
+  aktion            Aktion            @relation(fields: [aktionId], references: [id], onDelete: Cascade)
+  anmeldungOptionen AnmeldungOption[]
+}
+
+model Anmeldung {
+  id        String   @id @default(cuid())
+  aktionId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  aktion   Aktion            @relation(fields: [aktionId], references: [id], onDelete: Cascade)
+  optionen AnmeldungOption[]
+}
+
+model AnmeldungOption {
+  id          String @id @default(cuid())
+  anmeldungId String
+  optionId    String
+
+  anmeldung Anmeldung @relation(fields: [anmeldungId], references: [id], onDelete: Cascade)
+  option    Option    @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([anmeldungId, optionId])
+}
