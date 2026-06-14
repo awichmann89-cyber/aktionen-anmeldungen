@@ -15,32 +15,31 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Download,
-  Copy,
-  Check,
-  Users,
-  ExternalLink,
+  ArrowLeft, Plus, Trash2, Download, Copy, Check,
+  Users, ExternalLink, CheckSquare, Type,
 } from 'lucide-react'
+
+type OptionType = 'CHECKBOX' | 'TEXT'
 
 interface Option {
   id: string
   label: string
+  type: OptionType
   order: number
+}
+
+interface OptionEntry {
+  id: string
+  label: string
+  type: OptionType
 }
 
 interface AnmeldungOption {
   optionId: string
+  value: string | null
   option: Option
 }
 
@@ -63,9 +62,12 @@ interface Aktion {
   anmeldungen: Anmeldung[]
 }
 
+function createOptionEntry(): OptionEntry {
+  return { id: crypto.randomUUID(), label: '', type: 'CHECKBOX' }
+}
+
 export default function AktionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const router = useRouter()
   const [aktion, setAktion] = useState<Aktion | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -73,13 +75,9 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
   const [tab, setTab] = useState<'edit' | 'participants'>('edit')
 
   const [form, setForm] = useState({
-    name: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    anmeldeschluss: '',
+    name: '', description: '', startDate: '', endDate: '', anmeldeschluss: '',
   })
-  const [optionen, setOptionen] = useState<string[]>([])
+  const [optionen, setOptionen] = useState<OptionEntry[]>([])
 
   async function loadAktion() {
     try {
@@ -94,7 +92,9 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
         endDate: formatDateTimeInput(data.endDate),
         anmeldeschluss: formatDateTimeInput(data.anmeldeschluss),
       })
-      setOptionen(data.optionen.map((o) => o.label))
+      setOptionen(
+        data.optionen.map((o) => ({ id: o.id, label: o.label, type: o.type }))
+      )
     } catch {
       toast.error('Fehler beim Laden der Aktion')
     } finally {
@@ -102,19 +102,24 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  useEffect(() => {
-    loadAktion()
-  }, [id])
+  useEffect(() => { loadAktion() }, [id])
+
+  function updateOption(optId: string, changes: Partial<OptionEntry>) {
+    setOptionen((prev) => prev.map((o) => (o.id === optId ? { ...o, ...changes } : o)))
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     try {
-      const validOptionen = optionen.filter((o) => o.trim() !== '')
+      const validOptionen = optionen.filter((o) => o.label.trim() !== '')
       const res = await fetch(`/api/admin/aktionen/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, optionen: validOptionen }),
+        body: JSON.stringify({
+          ...form,
+          optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
+        }),
       })
       if (res.ok) {
         toast.success('Aktion gespeichert')
@@ -131,8 +136,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
 
   function copyPublicLink() {
     if (!aktion) return
-    const base = window.location.origin
-    navigator.clipboard.writeText(`${base}/anmeldung/${aktion.slug}`)
+    navigator.clipboard.writeText(`${window.location.origin}/anmeldung/${aktion.slug}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
     toast.success('Link kopiert!')
@@ -140,10 +144,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
 
   async function handleExport() {
     const res = await fetch(`/api/admin/aktionen/${id}/export`)
-    if (!res.ok) {
-      toast.error('Fehler beim Export')
-      return
-    }
+    if (!res.ok) { toast.error('Fehler beim Export'); return }
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -153,12 +154,8 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
     URL.revokeObjectURL(url)
   }
 
-  if (loading) {
-    return <div className="text-muted-foreground py-12 text-center">Lade...</div>
-  }
-  if (!aktion) {
-    return <div className="py-12 text-center text-destructive">Aktion nicht gefunden</div>
-  }
+  if (loading) return <div className="text-muted-foreground py-12 text-center">Lade...</div>
+  if (!aktion) return <div className="py-12 text-center text-destructive">Aktion nicht gefunden</div>
 
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/anmeldung/${aktion.slug}`
   const isOpen = isRegistrationOpen(aktion.anmeldeschluss)
@@ -168,9 +165,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
       {/* Header */}
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -204,120 +199,100 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">
-        <button
-          onClick={() => setTab('edit')}
-          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-            tab === 'edit'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Aktion bearbeiten
-        </button>
-        <button
-          onClick={() => setTab('participants')}
-          className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1 ${
-            tab === 'participants'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          Teilnehmer ({aktion.anmeldungen.length})
-        </button>
+        {(['edit', 'participants'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-1 ${
+              tab === t
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t === 'participants' && <Users className="h-3.5 w-3.5" />}
+            {t === 'edit' ? 'Aktion bearbeiten' : `Teilnehmer (${aktion.anmeldungen.length})`}
+          </button>
+        ))}
       </div>
 
       {tab === 'edit' && (
         <form onSubmit={handleSave} className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Grunddaten</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Grunddaten</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Name der Aktion *</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  required
-                />
+                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
               </div>
               <div className="space-y-2">
                 <Label>Beschreibung *</Label>
-                <Textarea
-                  className="min-h-[100px]"
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  required
-                />
+                <Textarea className="min-h-[100px]" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} required />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Termine</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Termine</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Startdatum & -zeit *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={form.startDate}
-                    onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-                    required
-                  />
+                  <Input type="datetime-local" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} required />
                 </div>
                 <div className="space-y-2">
                   <Label>Enddatum & -zeit *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={form.endDate}
-                    onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-                    required
-                  />
+                  <Input type="datetime-local" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} required />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Anmeldeschluss *</Label>
-                <Input
-                  type="datetime-local"
-                  value={form.anmeldeschluss}
-                  onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))}
-                  required
-                />
+                <Input type="datetime-local" value={form.anmeldeschluss} onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))} required />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Anmeldeoptionen</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Anmeldeoptionen</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Achtung: Optionen werden beim Speichern neu erstellt. Bestehende Anmeldungen
-                behalten ihre Auswahl.
+                Klicke auf den Typ-Button um zwischen Checkbox und Texteingabe zu wechseln.
               </p>
               <Separator />
               {optionen.length === 0 && (
                 <p className="text-sm text-muted-foreground italic">Keine Optionen definiert</p>
               )}
-              {optionen.map((option, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    placeholder={`Option ${i + 1}`}
-                    value={option}
-                    onChange={(e) =>
-                      setOptionen((prev) => prev.map((o, idx) => (idx === i ? e.target.value : o)))
+              {optionen.map((option) => (
+                <div key={option.id} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    title={option.type === 'CHECKBOX' ? 'Zu Texteingabe wechseln' : 'Zu Checkbox wechseln'}
+                    onClick={() =>
+                      updateOption(option.id, {
+                        type: option.type === 'CHECKBOX' ? 'TEXT' : 'CHECKBOX',
+                      })
                     }
+                    className={`shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                      option.type === 'CHECKBOX'
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+                        : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'
+                    }`}
+                  >
+                    {option.type === 'CHECKBOX' ? (
+                      <><CheckSquare className="h-3 w-3" /> Checkbox</>
+                    ) : (
+                      <><Type className="h-3 w-3" /> Text</>
+                    )}
+                  </button>
+                  <Input
+                    placeholder={option.type === 'CHECKBOX' ? 'z.B. Bus benötigt' : 'z.B. Besondere Hinweise'}
+                    value={option.label}
+                    onChange={(e) => updateOption(option.id, { label: e.target.value })}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => setOptionen((prev) => prev.filter((_, idx) => idx !== i))}
+                    onClick={() => setOptionen((prev) => prev.filter((o) => o.id !== option.id))}
                     className="text-destructive hover:text-destructive shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -328,7 +303,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setOptionen((prev) => [...prev, ''])}
+                onClick={() => setOptionen((prev) => [...prev, createOptionEntry()])}
               >
                 <Plus className="h-4 w-4" />
                 Option hinzufügen
@@ -371,7 +346,13 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
                     <TableHead>Name</TableHead>
                     {aktion.optionen.map((o) => (
                       <TableHead key={o.id} className="text-xs">
-                        {o.label}
+                        <div className="flex items-center gap-1">
+                          {o.type === 'CHECKBOX'
+                            ? <CheckSquare className="h-3 w-3 text-blue-500" />
+                            : <Type className="h-3 w-3 text-purple-500" />
+                          }
+                          {o.label}
+                        </div>
                       </TableHead>
                     ))}
                     <TableHead>Angemeldet am</TableHead>
@@ -379,16 +360,20 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
                 </TableHeader>
                 <TableBody>
                   {aktion.anmeldungen.map((a) => {
-                    const selectedIds = new Set(a.optionen.map((ao) => ao.optionId))
+                    const responseMap = new Map(a.optionen.map((ao) => [ao.optionId, ao.value]))
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium">{a.name}</TableCell>
                         {aktion.optionen.map((o) => (
                           <TableCell key={o.id}>
-                            {selectedIds.has(o.id) ? (
-                              <Badge variant="success">Ja</Badge>
+                            {o.type === 'CHECKBOX' ? (
+                              responseMap.has(o.id)
+                                ? <Badge variant="success">Ja</Badge>
+                                : <span className="text-muted-foreground text-sm">Nein</span>
                             ) : (
-                              <span className="text-muted-foreground text-sm">Nein</span>
+                              responseMap.has(o.id) && responseMap.get(o.id)
+                                ? <span className="text-sm">{responseMap.get(o.id)}</span>
+                                : <span className="text-muted-foreground text-sm">–</span>
                             )}
                           </TableCell>
                         ))}

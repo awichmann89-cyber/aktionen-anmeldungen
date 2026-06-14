@@ -10,7 +10,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, CheckSquare, Type } from 'lucide-react'
+
+type OptionType = 'CHECKBOX' | 'TEXT'
+
+interface OptionEntry {
+  id: string
+  label: string
+  type: OptionType
+}
+
+function createOption(): OptionEntry {
+  return { id: crypto.randomUUID(), label: '', type: 'CHECKBOX' }
+}
 
 export default function NewAktionPage() {
   const router = useRouter()
@@ -23,35 +35,24 @@ export default function NewAktionPage() {
     endDate: '',
     anmeldeschluss: '',
   })
-  const [optionen, setOptionen] = useState<string[]>([''])
+  const [optionen, setOptionen] = useState<OptionEntry[]>([createOption()])
 
-  function updateForm(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }))
-  }
-
-  function addOption() {
-    setOptionen((prev) => [...prev, ''])
-  }
-
-  function updateOption(i: number, value: string) {
-    setOptionen((prev) => prev.map((o, idx) => (idx === i ? value : o)))
-  }
-
-  function removeOption(i: number) {
-    setOptionen((prev) => prev.filter((_, idx) => idx !== i))
+  function updateOption(id: string, changes: Partial<OptionEntry>) {
+    setOptionen((prev) => prev.map((o) => (o.id === id ? { ...o, ...changes } : o)))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
-    const validOptionen = optionen.filter((o) => o.trim() !== '')
-
+    const validOptionen = optionen.filter((o) => o.label.trim() !== '')
     setLoading(true)
     try {
       const res = await fetch('/api/admin/aktionen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, optionen: validOptionen }),
+        body: JSON.stringify({
+          ...form,
+          optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
+        }),
       })
 
       if (res.ok) {
@@ -72,9 +73,7 @@ export default function NewAktionPage() {
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Neue Aktion erstellen</h1>
@@ -84,9 +83,7 @@ export default function NewAktionPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Grunddaten</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Grunddaten</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name der Aktion *</Label>
@@ -94,7 +91,7 @@ export default function NewAktionPage() {
                 id="name"
                 placeholder="z.B. Sommerlager 2025"
                 value={form.name}
-                onChange={(e) => updateForm('name', e.target.value)}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 required
               />
             </div>
@@ -105,7 +102,7 @@ export default function NewAktionPage() {
                 placeholder="Beschreibe die Aktion..."
                 className="min-h-[100px]"
                 value={form.description}
-                onChange={(e) => updateForm('description', e.target.value)}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 required
               />
             </div>
@@ -113,39 +110,34 @@ export default function NewAktionPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Termine</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Termine</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Startdatum & -zeit *</Label>
+                <Label>Startdatum & -zeit *</Label>
                 <Input
-                  id="startDate"
                   type="datetime-local"
                   value={form.startDate}
-                  onChange={(e) => updateForm('startDate', e.target.value)}
+                  onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">Enddatum & -zeit *</Label>
+                <Label>Enddatum & -zeit *</Label>
                 <Input
-                  id="endDate"
                   type="datetime-local"
                   value={form.endDate}
-                  onChange={(e) => updateForm('endDate', e.target.value)}
+                  onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
                   required
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="anmeldeschluss">Anmeldeschluss *</Label>
+              <Label>Anmeldeschluss *</Label>
               <Input
-                id="anmeldeschluss"
                 type="datetime-local"
                 value={form.anmeldeschluss}
-                onChange={(e) => updateForm('anmeldeschluss', e.target.value)}
+                onChange={(e) => setForm((f) => ({ ...f, anmeldeschluss: e.target.value }))}
                 required
               />
               <p className="text-xs text-muted-foreground">
@@ -161,23 +153,47 @@ export default function NewAktionPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Optionen, die Teilnehmer bei der Anmeldung anhaken können (z.B. „Bus benötigt",
-              „Vegetarisches Essen").
+              Optionen, die Teilnehmer bei der Anmeldung ausfüllen können.
             </p>
             <Separator />
             {optionen.map((option, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={option.id} className="flex items-center gap-2">
+                {/* Typ-Toggle */}
+                <button
+                  type="button"
+                  title={option.type === 'CHECKBOX' ? 'Checkbox → zu Texteingabe wechseln' : 'Texteingabe → zu Checkbox wechseln'}
+                  onClick={() =>
+                    updateOption(option.id, {
+                      type: option.type === 'CHECKBOX' ? 'TEXT' : 'CHECKBOX',
+                    })
+                  }
+                  className={`shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                    option.type === 'CHECKBOX'
+                      ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+                      : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'
+                  }`}
+                >
+                  {option.type === 'CHECKBOX' ? (
+                    <><CheckSquare className="h-3 w-3" /> Checkbox</>
+                  ) : (
+                    <><Type className="h-3 w-3" /> Text</>
+                  )}
+                </button>
                 <Input
-                  placeholder={`Option ${i + 1}`}
-                  value={option}
-                  onChange={(e) => updateOption(i, e.target.value)}
+                  placeholder={
+                    option.type === 'CHECKBOX'
+                      ? `z.B. Bus benötigt`
+                      : `z.B. Besondere Hinweise`
+                  }
+                  value={option.label}
+                  onChange={(e) => updateOption(option.id, { label: e.target.value })}
                 />
                 {optionen.length > 1 && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeOption(i)}
+                    onClick={() => setOptionen((prev) => prev.filter((o) => o.id !== option.id))}
                     className="text-destructive hover:text-destructive shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -185,7 +201,12 @@ export default function NewAktionPage() {
                 )}
               </div>
             ))}
-            <Button type="button" variant="outline" size="sm" onClick={addOption}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOptionen((prev) => [...prev, createOption()])}
+            >
               <Plus className="h-4 w-4" />
               Option hinzufügen
             </Button>

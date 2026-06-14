@@ -33,7 +33,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json()
     const { name, description, startDate, endDate, anmeldeschluss, optionen } = body
 
-    // Bestehende Optionen löschen und neu anlegen
     await prisma.option.deleteMany({ where: { aktionId: id } })
 
     const aktion = await prisma.aktion.update({
@@ -45,10 +44,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         endDate: new Date(endDate),
         anmeldeschluss: new Date(anmeldeschluss),
         optionen: {
-          create: (optionen || []).map((label: string, i: number) => ({
-            label,
-            order: i,
-          })),
+          create: (optionen || []).map(
+            (o: { label: string; type: string }, i: number) => ({
+              label: o.label,
+              type: o.type || 'CHECKBOX',
+              order: i,
+            })
+          ),
         },
       },
       include: {

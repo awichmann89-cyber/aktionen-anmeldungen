@@ -8,14 +8,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import {
+  Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User,
+} from 'lucide-react'
+
+type OptionType = 'CHECKBOX' | 'TEXT'
 
 interface Option {
   id: string
   label: string
+  type: OptionType
   order: number
 }
 
@@ -29,6 +33,24 @@ interface Aktion {
   optionen: Option[]
 }
 
+interface KindEntry {
+  id: string
+  name: string
+  // CHECKBOX: optionId in Set = ausgewählt
+  selectedCheckboxes: Set<string>
+  // TEXT: optionId → Texteingabe
+  textValues: Record<string, string>
+}
+
+function createKind(): KindEntry {
+  return {
+    id: crypto.randomUUID(),
+    name: '',
+    selectedCheckboxes: new Set(),
+    textValues: {},
+  }
+}
+
 export default function AnmeldungPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const [aktion, setAktion] = useState<Aktion | null>(null)
@@ -36,60 +58,87 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   const [notFound, setNotFound] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-
-  const [name, setName] = useState('')
-  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set())
+  const [registeredNames, setRegisteredNames] = useState<string[]>([])
+  const [kinder, setKinder] = useState<KindEntry[]>([createKind()])
 
   useEffect(() => {
     fetch(`/api/public/${slug}`)
-      .then((res) => {
-        if (res.status === 404) {
-          setNotFound(true)
-          return null
-        }
-        return res.json()
-      })
-      .then((data) => {
-        if (data) setAktion(data)
-      })
+      .then((res) => { if (res.status === 404) { setNotFound(true); return null } return res.json() })
+      .then((data) => { if (data) setAktion(data) })
       .catch(() => toast.error('Fehler beim Laden'))
       .finally(() => setLoading(false))
   }, [slug])
 
-  function toggleOption(optionId: string) {
-    setSelectedOptions((prev) => {
-      const next = new Set(prev)
-      if (next.has(optionId)) {
-        next.delete(optionId)
-      } else {
-        next.add(optionId)
-      }
-      return next
-    })
+  function updateName(id: string, name: string) {
+    setKinder((prev) => prev.map((k) => (k.id === id ? { ...k, name } : k)))
   }
+
+  function toggleCheckbox(kindId: string, optionId: string) {
+    setKinder((prev) =>
+      prev.map((k) => {
+        if (k.id !== kindId) return k
+        const next = new Set(k.selectedCheckboxes)
+        next.has(optionId) ? next.delete(optionId) : next.add(optionId)
+        return { ...k, selectedCheckboxes: next }
+      })
+    )
+  }
+
+  function updateText(kindId: string, optionId: string, value: string) {
+    setKinder((prev) =>
+      prev.map((k) =>
+        k.id !== kindId ? k : { ...k, textValues: { ...k.textValues, [optionId]: value } }
+      )
+    )
+  }
+
+  function addKind() { setKinder((prev) => [...prev, createKind()]) }
+  function removeKind(id: string) { setKinder((prev) => prev.filter((k) => k.id !== id)) }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!aktion) return
 
+    const validKinder = kinder.filter((k) => k.name.trim() !== '')
+    if (validKinder.length === 0) {
+      toast.error('Bitte mindestens einen Namen eingeben')
+      return
+    }
+
     setSubmitting(true)
     try {
-      const res = await fetch('/api/anmeldung', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          aktionId: aktion.id,
-          name: name.trim(),
-          selectedOptionIds: Array.from(selectedOptions),
-        }),
-      })
+      const results = await Promise.all(
+        validKinder.map((kind) => {
+          // Checkbox-Antworten (nur angehakte)
+          const checkboxResponses = Array.from(kind.selectedCheckboxes).map((optionId) => ({
+            optionId,
+          }))
+          // Text-Antworten (nur nicht-leere)
+          const textResponses = Object.entries(kind.textValues)
+            .filter(([, val]) => val.trim() !== '')
+            .map(([optionId, value]) => ({ optionId, value }))
 
-      if (res.ok) {
-        setSubmitted(true)
-      } else {
-        const data = await res.json()
+          return fetch('/api/anmeldung', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              aktionId: aktion.id,
+              name: kind.name.trim(),
+              optionResponses: [...checkboxResponses, ...textResponses],
+            }),
+          })
+        })
+      )
+
+      const failed = results.filter((r) => !r.ok)
+      if (failed.length > 0) {
+        const data = await failed[0].json()
         toast.error(data.error || 'Fehler bei der Anmeldung')
+        return
       }
+
+      setRegisteredNames(validKinder.map((k) => k.name.trim()))
+      setSubmitted(true)
     } catch {
       toast.error('Verbindungsfehler – bitte nochmal versuchen')
     } finally {
@@ -122,6 +171,8 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   }
 
   const isOpen = isRegistrationOpen(aktion.anmeldeschluss)
+  const checkboxOptionen = aktion.optionen.filter((o) => o.type === 'CHECKBOX')
+  const textOptionen = aktion.optionen.filter((o) => o.type === 'TEXT')
 
   if (submitted) {
     return (
@@ -132,12 +183,22 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
             <div>
               <h2 className="text-2xl font-bold">Anmeldung erfolgreich!</h2>
               <p className="text-muted-foreground mt-2">
-                <strong>{name}</strong> ist jetzt für <strong>{aktion.name}</strong> angemeldet.
+                {registeredNames.length === 1 ? (
+                  <><strong>{registeredNames[0]}</strong> ist jetzt für <strong>{aktion.name}</strong> angemeldet.</>
+                ) : (
+                  <>{registeredNames.length} Kinder sind jetzt für <strong>{aktion.name}</strong> angemeldet:</>
+                )}
               </p>
+              {registeredNames.length > 1 && (
+                <ul className="mt-3 space-y-1">
+                  {registeredNames.map((name) => (
+                    <li key={name} className="text-sm font-medium">✓ {name}</li>
+                  ))}
+                </ul>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Du erhältst keine automatische Bestätigung. Bei Fragen wende dich bitte direkt an die
-              Organisatoren.
+              Bei Fragen wende dich bitte direkt an die Organisatoren.
             </p>
           </CardContent>
         </Card>
@@ -148,15 +209,11 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
   return (
     <div className="min-h-screen bg-muted/20 py-8 px-4">
       <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center space-y-1">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">
-            Online-Anmeldung
-          </p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Online-Anmeldung</p>
           <h1 className="text-3xl font-bold tracking-tight">{aktion.name}</h1>
         </div>
 
-        {/* Info card */}
         <Card>
           <CardContent className="py-4 space-y-3">
             <p className="text-muted-foreground">{aktion.description}</p>
@@ -164,13 +221,11 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4 shrink-0" />
-                <span>
-                  {formatDate(aktion.startDate)} – {formatDate(aktion.endDate)}
-                </span>
+                <span>{formatDate(aktion.startDate)} – {formatDate(aktion.endDate)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">Anmeldeschluss: </span>
+                <span className="text-muted-foreground">Anmeldeschluss:</span>
                 <span className={isOpen ? 'text-orange-600 font-medium' : 'text-destructive font-medium'}>
                   {formatDateTime(aktion.anmeldeschluss)}
                 </span>
@@ -179,75 +234,113 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
           </CardContent>
         </Card>
 
-        {/* Registration status */}
         {!isOpen && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Anmeldeschluss überschritten</AlertTitle>
-            <AlertDescription>
-              Die Anmeldefrist für diese Aktion ist abgelaufen. Eine Anmeldung ist nicht mehr
-              möglich.
-            </AlertDescription>
+            <AlertDescription>Die Anmeldefrist für diese Aktion ist abgelaufen.</AlertDescription>
           </Alert>
         )}
 
-        {/* Form */}
         {isOpen && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Jetzt anmelden</CardTitle>
-              <CardDescription>Fülle das Formular aus um dich anzumelden.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name des Kindes / Teilnehmers *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Vorname Nachname"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoFocus
-                  />
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Kinder anmelden</CardTitle>
+                <CardDescription>Du kannst mehrere Kinder auf einmal anmelden.</CardDescription>
+              </CardHeader>
+            </Card>
 
-                {aktion.optionen.length > 0 && (
-                  <div className="space-y-3">
-                    <Label>Optionen</Label>
-                    <div className="space-y-3 rounded-md border p-4">
-                      {aktion.optionen.map((option) => (
-                        <div key={option.id} className="flex items-center gap-3">
-                          <Checkbox
-                            id={option.id}
-                            checked={selectedOptions.has(option.id)}
-                            onCheckedChange={() => toggleOption(option.id)}
-                          />
-                          <label
-                            htmlFor={option.id}
-                            className="text-sm font-medium leading-none cursor-pointer select-none"
-                          >
-                            {option.label}
-                          </label>
-                        </div>
-                      ))}
+            {kinder.map((kind, index) => (
+              <Card key={kind.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <User className="h-4 w-4" />
+                      Kind {index + 1}
                     </div>
+                    {kinder.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeKind(kind.id)}
+                        className="text-destructive hover:text-destructive h-7 px-2"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Entfernen
+                      </Button>
+                    )}
                   </div>
-                )}
+                </CardHeader>
+                <CardContent className="space-y-4 pt-0">
+                  {/* Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor={`name-${kind.id}`}>Name *</Label>
+                    <Input
+                      id={`name-${kind.id}`}
+                      placeholder="Vorname Nachname"
+                      value={kind.name}
+                      onChange={(e) => updateName(kind.id, e.target.value)}
+                      autoFocus={index === 0}
+                    />
+                  </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Wird angemeldet...
-                    </>
-                  ) : (
-                    'Jetzt anmelden'
+                  {/* Checkbox-Optionen */}
+                  {checkboxOptionen.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Optionen</Label>
+                      <div className="space-y-3 rounded-md border p-3">
+                        {checkboxOptionen.map((option) => (
+                          <div key={option.id} className="flex items-center gap-3">
+                            <Checkbox
+                              id={`${kind.id}-${option.id}`}
+                              checked={kind.selectedCheckboxes.has(option.id)}
+                              onCheckedChange={() => toggleCheckbox(kind.id, option.id)}
+                            />
+                            <label
+                              htmlFor={`${kind.id}-${option.id}`}
+                              className="text-sm font-medium leading-none cursor-pointer select-none"
+                            >
+                              {option.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+
+                  {/* Text-Optionen */}
+                  {textOptionen.map((option) => (
+                    <div key={option.id} className="space-y-2">
+                      <Label htmlFor={`${kind.id}-text-${option.id}`}>{option.label}</Label>
+                      <Input
+                        id={`${kind.id}-text-${option.id}`}
+                        placeholder="Deine Eingabe..."
+                        value={kind.textValues[option.id] || ''}
+                        onChange={(e) => updateText(kind.id, option.id, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+
+            <Button type="button" variant="outline" className="w-full" onClick={addKind}>
+              <Plus className="h-4 w-4" />
+              Weiteres Kind hinzufügen
+            </Button>
+
+            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+              {submitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Wird angemeldet...</>
+              ) : kinder.length === 1 ? (
+                'Jetzt anmelden'
+              ) : (
+                `${kinder.filter((k) => k.name.trim()).length} Kinder anmelden`
+              )}
+            </Button>
+          </form>
         )}
 
         <p className="text-center text-xs text-muted-foreground">

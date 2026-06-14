@@ -1,20 +1,25 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+interface OptionResponse {
+  optionId: string
+  value?: string // TEXT: Texteingabe; CHECKBOX: undefined (Anwesenheit = ausgewählt)
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { aktionId, name, selectedOptionIds } = body
+    const { aktionId, name, optionResponses } = body as {
+      aktionId: string
+      name: string
+      optionResponses: OptionResponse[]
+    }
 
     if (!aktionId || !name?.trim()) {
       return NextResponse.json({ error: 'Name und Aktion sind Pflichtfelder' }, { status: 400 })
     }
 
-    // Prüfen ob Anmeldeschluss noch nicht überschritten
-    const aktion = await prisma.aktion.findUnique({
-      where: { id: aktionId },
-    })
-
+    const aktion = await prisma.aktion.findUnique({ where: { id: aktionId } })
     if (!aktion) {
       return NextResponse.json({ error: 'Aktion nicht gefunden' }, { status: 404 })
     }
@@ -26,13 +31,15 @@ export async function POST(request: Request) {
       )
     }
 
-    // Anmeldung erstellen
     const anmeldung = await prisma.anmeldung.create({
       data: {
         aktionId,
         name: name.trim(),
         optionen: {
-          create: (selectedOptionIds || []).map((optionId: string) => ({ optionId })),
+          create: (optionResponses || []).map((r) => ({
+            optionId: r.optionId,
+            value: r.value ?? null,
+          })),
         },
       },
     })

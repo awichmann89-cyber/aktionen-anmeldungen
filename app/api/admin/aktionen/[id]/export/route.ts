@@ -25,30 +25,33 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
     }
 
-    // Tabellenheader
     const headers = [
       'Name',
       ...aktion.optionen.map((o) => o.label),
       'Anmeldedatum',
     ]
 
-    // Tabellenzeilen
     const rows = aktion.anmeldungen.map((a) => {
-      const selectedOptionIds = new Set(a.optionen.map((ao) => ao.optionId))
+      const responseMap = new Map(a.optionen.map((ao) => [ao.optionId, ao.value]))
       return [
         a.name,
-        ...aktion.optionen.map((o) => (selectedOptionIds.has(o.id) ? 'Ja' : 'Nein')),
+        ...aktion.optionen.map((o) => {
+          if (!responseMap.has(o.id)) {
+            return o.type === 'CHECKBOX' ? 'Nein' : '–'
+          }
+          if (o.type === 'TEXT') {
+            return responseMap.get(o.id) || '–'
+          }
+          return 'Ja'
+        }),
         format(new Date(a.createdAt), 'dd.MM.yyyy HH:mm', { locale: de }),
       ]
     })
 
-    // Excel-Workbook erstellen
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-
-    // Spaltenbreiten setzen
     ws['!cols'] = [
       { wch: 25 },
-      ...aktion.optionen.map(() => ({ wch: 15 })),
+      ...aktion.optionen.map((o) => ({ wch: o.type === 'TEXT' ? 30 : 15 })),
       { wch: 20 },
     ]
 

@@ -37,10 +37,13 @@ export async function POST(request: Request) {
         anmeldeschluss: new Date(anmeldeschluss),
         slug,
         optionen: {
-          create: (optionen || []).map((label: string, i: number) => ({
-            label,
-            order: i,
-          })),
+          create: (optionen || []).map(
+            (o: { label: string; type: string }, i: number) => ({
+              label: o.label,
+              type: o.type || 'CHECKBOX',
+              order: i,
+            })
+          ),
         },
       },
       include: {

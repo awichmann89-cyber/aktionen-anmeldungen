@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OptionType {
+  CHECKBOX
+  TEXT
+}
+
 model Aktion {
   id             String   @id @default(cuid())
   name           String
@@ -23,10 +28,11 @@ model Aktion {
 }
 
 model Option {
-  id       String @id @default(cuid())
+  id       String     @id @default(cuid())
   aktionId String
   label    String
-  order    Int    @default(0)
+  type     OptionType @default(CHECKBOX)
+  order    Int        @default(0)
 
   aktion            Aktion            @relation(fields: [aktionId], references: [id], onDelete: Cascade)
   anmeldungOptionen AnmeldungOption[]
@@ -43,9 +49,10 @@ model Anmeldung {
 }
 
 model AnmeldungOption {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   anmeldungId String
   optionId    String
+  value       String? // CHECKBOX: null (Anwesenheit = ausgewählt), TEXT: Texteingabe des Nutzers
 
   anmeldung Anmeldung @relation(fields: [anmeldungId], references: [id], onDelete: Cascade)
   option    Option    @relation(fields: [optionId], references: [id], onDelete: Cascade)
