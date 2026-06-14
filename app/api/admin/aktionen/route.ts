@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
+import { fromZonedTime } from 'date-fns-tz'
+import { TZ } from '@/lib/utils'
 
 export async function GET() {
   try {
@@ -32,9 +34,9 @@ export async function POST(request: Request) {
       data: {
         name,
         description,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        anmeldeschluss: new Date(anmeldeschluss),
+        startDate: fromZonedTime(startDate, TZ),
+        endDate: fromZonedTime(endDate, TZ),
+        anmeldeschluss: fromZonedTime(anmeldeschluss, TZ),
         imageUrl: imageUrl || null,
         maxTeilnehmer: maxTeilnehmer ? Number(maxTeilnehmer) : null,
         minAlter: minAlter != null ? Number(minAlter) : 9,

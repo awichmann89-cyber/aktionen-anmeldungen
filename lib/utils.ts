@@ -1,10 +1,9 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { de } from 'date-fns/locale'
 
-const TZ = 'Europe/Berlin'
+export const TZ = 'Europe/Berlin'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,8 +17,10 @@ export function formatDateTime(date: Date | string): string {
   return formatInTimeZone(new Date(date), TZ, 'dd.MM.yyyy HH:mm', { locale: de })
 }
 
+// Liefert einen lokalen Datetime-String (ohne TZ-Suffix) in Berliner Zeit,
+// damit <DateTimeInput> die gespeicherten Werte korrekt vorausfüllt.
 export function formatDateTimeInput(date: Date | string): string {
-  return format(new Date(date), "yyyy-MM-dd'T'HH:mm")
+  return formatInTimeZone(new Date(date), TZ, "yyyy-MM-dd'T'HH:mm")
 }
 
 export function isRegistrationOpen(anmeldeschluss: Date | string): boolean {
