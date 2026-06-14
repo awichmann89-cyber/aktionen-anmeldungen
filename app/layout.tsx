@@ -6,7 +6,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Aktionen & Anmeldungen',
+  title: 'Bin Dabei!',
   description: 'Online-Anmeldung für Kinder- und Jugendaktionen',
   themeColor: '#7C5CFC',
 }

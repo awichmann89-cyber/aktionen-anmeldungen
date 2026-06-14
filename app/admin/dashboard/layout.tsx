@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/admin/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Image src="/logo.svg" alt="Logo" width={32} height={32} className="rounded-lg" />
-            <span className="font-semibold text-lg">Aktionen-Verwaltung</span>
+            <span className="font-semibold text-lg">Bin Dabei! – Verwaltung</span>
           </Link>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>

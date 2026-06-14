@@ -263,7 +263,7 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4 shrink-0" />
-                <span>{formatDate(aktion.startDate)} – {formatDate(aktion.endDate)}</span>
+                <span>{formatDateTime(aktion.startDate)} – {formatDateTime(aktion.endDate)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
