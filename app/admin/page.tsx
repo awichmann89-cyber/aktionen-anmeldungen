@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Lock } from 'lucide-react'
+import Image from 'next/image'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -42,10 +43,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-2">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
+          <div className="flex justify-center mb-3">
+            <Image src="/logo.svg" alt="Logo" width={64} height={64} className="rounded-2xl" />
           </div>
           <CardTitle>Admin-Bereich</CardTitle>
           <CardDescription>Bitte gib das Administrator-Passwort ein</CardDescription>

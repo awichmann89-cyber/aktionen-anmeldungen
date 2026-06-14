@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Aktionen & Anmeldungen',
   description: 'Online-Anmeldung für Kinder- und Jugendaktionen',
+  themeColor: '#7C5CFC',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
