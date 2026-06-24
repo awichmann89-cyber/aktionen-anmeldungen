@@ -135,7 +135,7 @@ export default function AktionDetailPage({ params }: { params: Promise<{ id: str
           maxTeilnehmer: form.maxTeilnehmer ? Number(form.maxTeilnehmer) : null,
           minAlter: Number(form.minAlter),
           maxAlter: Number(form.maxAlter),
-          optionen: validOptionen.map((o) => ({ label: o.label, type: o.type })),
+          optionen: validOptionen.map((o) => ({ id: o.id, label: o.label, type: o.type })),
         }),
       })
       if (res.ok) {
