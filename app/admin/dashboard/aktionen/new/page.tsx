@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/rich-text-editor'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Plus, Trash2, CheckSquare, Type } from 'lucide-react'
 import { ImageUpload } from '@/components/image-upload'
@@ -107,13 +107,10 @@ export default function NewAktionPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Beschreibung *</Label>
-              <Textarea
-                id="description"
-                placeholder="Beschreibe die Aktion..."
-                className="min-h-[100px]"
+              <RichTextEditor
                 value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                required
+                onChange={(html) => setForm((f) => ({ ...f, description: html }))}
+                placeholder="Beschreibe die Aktion..."
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

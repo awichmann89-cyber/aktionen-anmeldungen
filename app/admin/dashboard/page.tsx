@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { stripHtml } from '@/components/rich-text'
 import { Plus, Users, Calendar, Clock, ExternalLink, Trash2, Edit } from 'lucide-react'
 
 interface Aktion {
@@ -108,7 +109,7 @@ export default function DashboardPage() {
                       {open ? 'Offen' : 'Geschlossen'}
                     </Badge>
                   </div>
-                  <CardDescription className="line-clamp-2">{aktion.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">{stripHtml(aktion.description)}</CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex-1 space-y-3">

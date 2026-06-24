@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { RichText } from '@/components/rich-text'
 import {
   Calendar, Clock, CheckCircle2, AlertCircle, Loader2, Plus, Trash2, User, Users, Mail,
 } from 'lucide-react'
@@ -258,7 +259,7 @@ export default function AnmeldungPage({ params }: { params: Promise<{ slug: stri
 
         <Card>
           <CardContent className="py-4 space-y-3">
-            <p className="text-muted-foreground">{aktion.description}</p>
+            <RichText html={aktion.description} className="text-muted-foreground" />
             <Separator />
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
