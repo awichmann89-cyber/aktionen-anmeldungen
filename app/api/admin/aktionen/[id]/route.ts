@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { OptionType } from '@prisma/client'
 import { fromZonedTime } from 'date-fns-tz'
 import { TZ } from '@/lib/utils'
 
@@ -61,11 +62,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         if (o.id && existingIds.has(o.id)) {
           await tx.option.update({
             where: { id: o.id },
-            data: { label: o.label, type: o.type || 'CHECKBOX', order: i },
+            data: { label: o.label, type: (o.type || 'CHECKBOX') as OptionType, order: i },
           })
         } else {
           await tx.option.create({
-            data: { aktionId: id, label: o.label, type: o.type || 'CHECKBOX', order: i },
+            data: { aktionId: id, label: o.label, type: (o.type || 'CHECKBOX') as OptionType, order: i },
           })
         }
       }
